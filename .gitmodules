@@ -1,0 +1,3 @@
+[submodule "weights/pretrained"]
+	path = weights/pretrained
+	url = https://huggingface.co/chemahc94/dentex-tooth-segmentation

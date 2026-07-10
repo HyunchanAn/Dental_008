@@ -1,0 +1,12 @@
+# Weights
+weights/*.pth
+!weights/pretrained/
+
+# Python
+__pycache__/
+*.pyc
+
+# Environment
+.env
+venv/
+env/

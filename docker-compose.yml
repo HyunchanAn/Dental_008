@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  dentex_seg:
+    build: .
+    image: dentex_seg:latest
+    container_name: dentex_seg_runner
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./weights:/app/weights
+      - ./output:/app/output
+      - ~/.cache/huggingface:/root/.cache/huggingface # 데이터셋 다운로드 캐시 유지
+      - ~/.cache/dentex_dataset:/root/.cache/dentex_dataset # 추출된 데이터셋 캐시 유지

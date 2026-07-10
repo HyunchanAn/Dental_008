@@ -1,0 +1,14 @@
+## 2026-07-10
+오전 11시 45분 - DENTEX 학습 및 가중치 업로드 완료 메모 병합
+
+- DENTEX 데이터셋 인스턴스 세그멘테이션 학습 파이프라인 구축 완료
+- Hugging Face 데이터셋 자동 다운로드 및 zip 내부 파일 선택적 추출 로직 구현 (E:\Github\Dental_008\src\dentex_seg\dataset.py)
+  - Hugging Face의 DENTEX 데이터셋은 10.9GB 분량의 zip 파일들로 제공되어 default datasets 모듈이 형식을 자동 추론하지 못해 ValueError 발생.
+  - 이에 따라 hf_hub_download 모듈을 적용하고 zipfile 라이브러리를 통해 필요한 [quadrant_enumeration] 하위 폴더만 추출하는 방식으로 개선 완료.
+- FDI 치식 번호 매핑 수식을 어노테이션 구조 [category_id_1, category_id_2]에 맞춰 수정
+- RTX 5080 GPU 호환성 문제 해결
+  - RTX 5080 그래픽카드는 Blackwell 아키텍처(compute capability sm_120)로, 기존 PyTorch 2.0.1 및 CUDA 11.7 이미지에서는 작동하지 못하고 행(hang) 혹은 CUDA kernel image error가 발생함.
+  - 호스트 파이썬 환경의 PyTorch 2.13.0+cu130 및 torchvision 0.28.0+cu130 패키지 강제 재설치하여 CUDA NMS 및 텐서 연산 호환성 확보.
+- 30에포크 장기 학습 완주 및 가중치 업로드
+  - 호스트 GPU 기반의 30에포크 학습 완료 및 30개 에포크 전체 가중치 파일 [E:\Github\Dental_008\weights] 생성.
+  - 허깅페이스 허브 리포지토리 [chemahc94/dentex-tooth-segmentation]로 30개 가중치 파일 (총 5.55 GB) 최종 업로드 완료.
