@@ -104,16 +104,28 @@ class DENTEXDataset(Dataset):
         masks = []
         
         for ann in annotations:
-            # category_id_1: quadrant (0~3 -> 1~4)
-            # category_id_2: tooth position (0~7 -> 1~8)
+            # category_id_1 & category_id_2가 있는 DENTEX 포맷이거나 단일 category_id 포맷 지원
             cat_1 = ann.get('category_id_1')
             cat_2 = ann.get('category_id_2')
+            cat_id = ann.get('category_id')
             
-            if cat_1 is None or cat_2 is None:
+            if cat_1 is not None and cat_2 is not None:
+                fdi = (cat_1 + 1) * 10 + (cat_2 + 1)
+            elif cat_id is not None:
+                # category_id 자체가 FDI 번호인 경우 (예: 11~48, 51~85)
+                if cat_id in self.fdi_to_id:
+                    fdi = cat_id
+                # category_id가 1~52 사이의 class_id인 경우
+                elif cat_id in self.id_to_fdi:
+                    fdi = self.id_to_fdi[cat_id]
+                # category_id가 0~51 사이의 0-indexed class_id인 경우
+                elif (cat_id + 1) in self.id_to_fdi:
+                    fdi = self.id_to_fdi[cat_id + 1]
+                else:
+                    continue
+            else:
                 continue
                 
-            fdi = (cat_1 + 1) * 10 + (cat_2 + 1)
-            
             if fdi not in self.fdi_to_id:
                 continue
                 
