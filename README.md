@@ -1,11 +1,14 @@
 # Dental_008: DENTEX 혼합치열기 인스턴스 세그멘테이션
 
-![Status](https://img.shields.io/badge/Status-v1.0%20Release-brightgreen) ![Python](https://img.shields.io/badge/Python-3.12%2B-blue) ![Backend](https://img.shields.io/badge/Backend-PyTorch-red) ![CV](https://img.shields.io/badge/CV-Mask_R--CNN-orange) ![Docker](https://img.shields.io/badge/Docker-Ready-blue)
+![Status](https://img.shields.io/badge/Status-v1.0%20Release-brightgreen) ![Python](https://img.shields.io/badge/Python-3.12%2B-blue) ![Backend](https://img.shields.io/badge/Backend-YOLOv8-red) ![UI](https://img.shields.io/badge/UI-Streamlit-orange) ![CI/CD Pipeline](https://img.shields.io/badge/CI%2FCD%20Pipeline-passing-brightgreen?logo=github)
+
+
+    
 
 ## 📌 개요
 이 프로젝트는 파노라마 X-ray 영상에서 유치(Deciduous)와 영구치(Permanent, 치배 포함)를 개별적으로 분할(Instance Segmentation)하고 FDI 치식 번호를 부여하는 PyTorch 파이프라인입니다. 혼합치열기 환자의 구강 구조에서 유치와 영구치가 겹치거나 치배가 매복된 형태를 픽셀 단위로 정확하게 식별합니다.
 
-## 🚀 라이브러리 설치 및 로컬 실행 방법
+## 설치 및 실행 방법
 
 본 프로젝트는 표준 Python 라이브러리(`dentex_seg`) 형태로 패키징되어 있습니다.
 
