@@ -86,7 +86,7 @@ git clone --recurse-submodules https://github.com/YourOrg/Dental_008.git
 - **Average Bounding Box IoU**: 0.8245
 - **Average Mask IoU**: 0.7965
 
-상세한 시각화 자료와 성능 평가 지표는 루트 경로에 생성된 **[최종 E2E 검증 리포트](file:///E:/Github/Dental_008/reports_archive/260710_1227_Instance_Segmentation_E2E_Validation_Report.md)**에서 확인하실 수 있습니다.
+상세한 시각화 자료와 성능 평가 지표는 루트 경로에 생성된 **[최종 E2E 검증 리포트](reports_archive/260710_1300_Dentex_E2E_Validation_Report.md)**에서 확인하실 수 있습니다.
 
 ---
 
