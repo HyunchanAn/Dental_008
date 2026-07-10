@@ -27,3 +27,9 @@
 - RTX 5080 환경에서 10 에포크 학습 완주. 검증 세트 정확도 100% (Val Loss: 0.0006) 도달 확인.
 - 최종 가중치는 [weights/classifier_best.pth]에 정상 저장되었으며, 향후 DENTEX 영구치 모델과 병렬 또는 전처리 라우터로 연동 가능한 기반을 마련함.
 
+
+오후 10시 58분 - 유치 이진 분류기 결과물 업로드 및 문서화 완료
+- 학습된 가중치(classifier_best.pth)를 weights/pretrained 폴더(Hugging Face 서브모듈)에 커밋 및 원격 서버(chemahc94/dentex-tooth-segmentation)로 푸시 완료.
+- 다른 컴퓨터에서 git clone --recurse-submodules 시 가중치와 파이프라인을 그대로 이어서 사용할 수 있도록 조치함.
+- README.md 업데이트: 이진 분류 모델의 라우터 역할 설명 추가, Kaggle 데이터셋의 출처를 References 항목에 명시함.
+

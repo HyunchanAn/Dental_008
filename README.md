@@ -8,6 +8,8 @@
 ## 📌 개요
 이 프로젝트는 파노라마 X-ray 영상에서 유치(Deciduous)와 영구치(Permanent, 치배 포함)를 개별적으로 분할(Instance Segmentation)하고 FDI 치식 번호를 부여하는 PyTorch 파이프라인입니다. 혼합치열기 환자의 구강 구조에서 유치와 영구치가 겹치거나 치배가 매복된 형태를 픽셀 단위로 정확하게 식별합니다.
 
+추가적으로, 유치가 포함된 소아/혼합치열기 환자 이미지와 성인 영구치열기 이미지를 사전에 구분하는 **유치 존재 여부 이진 분류 모델(Binary Classifier)**이 포함되어, 영구치 전용 모델의 에러를 방지하는 라우터 역할을 수행합니다.
+
 ## 설치 및 실행 방법
 
 본 프로젝트는 표준 Python 라이브러리(`dentex_seg`) 형태로 패키징되어 있습니다.
@@ -20,10 +22,17 @@ pip install -e .
 이는 `requirements.txt`에 명시된 의존성 패키지들과 함께 본 파이프라인을 시스템에 등록합니다.
 
 ### 2. 데이터 학습 (Training)
+**[영구치 분할 모델 학습]**
 ```bash
 python src/dentex_seg/train.py
 ```
 - 스크립트를 실행하면 Hugging Face의 `datasets` 라이브러리를 통해 DENTEX 데이터셋이 자동으로 다운로드 및 캐싱됩니다.
+
+**[유치 존재 여부 이진 분류기 학습]**
+```bash
+python src/dentex_seg/train_classifier.py
+```
+- 스크립트 실행 시 로컬의 Kaggle 소아/성인 폴더 구조를 기반으로 분류 모델을 학습합니다.
 - 학습된 가중치는 `weights/` 폴더에 저장됩니다.
 
 ### 3. 추론 및 시각화 (Inference)
@@ -64,17 +73,19 @@ docker logs -f dentex_seg_runner
 
 ## 📦 데이터셋 및 사전 학습 가중치 다운로드
 
-### 1. 데이터셋 자동 다운로드
-- **데이터셋 출처**: Hugging Face Open Dataset [LUNA0206/DENTEX](https://huggingface.co/datasets/LUNA0206/DENTEX)
-- **다운로드 방식**: `datasets.load_dataset("LUNA0206/DENTEX")` 모듈을 통해 파이프라인 구동 시 알아서 메모리로 다운로드 및 캐싱됩니다.
+### 1. 데이터셋 자동 다운로드 및 구성
+- **영구치 데이터셋 (DENTEX)**: Hugging Face Open Dataset [LUNA0206/DENTEX](https://huggingface.co/datasets/LUNA0206/DENTEX)
+  - `datasets.load_dataset("LUNA0206/DENTEX")` 모듈을 통해 파이프라인 구동 시 자동 다운로드 및 캐싱됩니다.
+- **유치 이진 분류 데이터셋 (Kaggle Children's)**: [Childrens dental panoramic radiographs dataset](https://www.kaggle.com/datasets/truthisneverlinear/childrens-dental-panoramic-radiographs-dataset)
+  - 이 데이터셋은 `Adult tooth segmentation dataset`과 `Childrens dental caries segmentation dataset` 두 폴더로 나뉘며, 유치/혼합치열기 이진 분류기의 훈련에 사용됩니다.
 
 ### 2. 사전 학습 가중치 다운로드 (Git Submodule 연동)
-모델 학습에 소요되는 긴 시간을 절약하기 위해, 훈련된 30에포크 분량의 전체 모델 가중치(약 5.5GB)는 허깅페이스 저장소에 서브모듈로 연동되어 있습니다. 다른 컴퓨터에서 클론 시 아래 명령어를 통해 코드와 가중치를 한 번에 받아올 수 있습니다.
+모델 학습에 소요되는 긴 시간을 절약하기 위해, 훈련된 DENTEX 가중치 및 유치 이진 분류기 가중치는 허깅페이스 저장소에 서브모듈로 연동되어 있습니다. 다른 컴퓨터(오케스트레이션 PC 등)에서 이 작업을 그대로 이어가려면 클론 시 아래 명령어를 통해 코드와 가중치를 한 번에 받아올 수 있습니다.
 ```bash
-git clone --recurse-submodules https://github.com/YourOrg/Dental_008.git
+git clone --recurse-submodules https://github.com/HyunchanAn/Dental_008.git
 ```
 - **가중치 저장소**: [chemahc94/dentex-tooth-segmentation](https://huggingface.co/chemahc94/dentex-tooth-segmentation)
-- **참고 사항**: 모델 접근 권한이나 사용에 대해 필요하면 레포지토리 주인에게 연락하세요. 가져온 가중치는 `weights/pretrained/` 경로에 위치하며 바로 검증 및 추론에 사용할 수 있습니다.
+- **참고 사항**: 모델 접근 권한이나 사용에 대해 필요하면 레포지토리 주인에게 연락하세요. 가져온 가중치는 `weights/pretrained/` 경로에 위치하며 바로 검증, 추론 및 라우터 기능에 사용할 수 있습니다.
 
 ---
 
@@ -94,3 +105,9 @@ git clone --recurse-submodules https://github.com/YourOrg/Dental_008.git
 의료 비전 데이터나 인공지능 파이프라인의 경우, 로컬 환경(윈도우/리눅스/맥)이나 GPU 의존성에 따라 버전 충돌이 자주 일어납니다. 본 파이프라인은 처음부터 **"다른 컴퓨터 환경에서의 이식성과 원활한 검증 작업 보장"**을 목적으로 설계되었습니다.
 1. **의존성 충돌 제로**: 파이프라인 전체를 `dentex_seg`라는 공식 라이브러리로 패키징하고 도커 컨테이너화하여, 새로운 PC에서도 환경 세팅으로 고통받지 않고 일관된 학습/추론 결과를 얻을 수 있습니다.
 2. **사전 학습 모델 연동**: 현재 시스템에서 무거운 모델 학습을 돌려 허깅페이스에 가중치만 올려두면, 타 환경에서는 도커 컨테이너를 띄우고 허깅페이스에서 가중치만 받아 바로 모델 성능 검증을 수행할 수 있어 막대한 시간을 아낄 수 있습니다.
+
+---
+
+## 📚 References
+- [DENTEX Dataset (Hugging Face Open Dataset) - Permanent Teeth Segmentation](https://huggingface.co/datasets/LUNA0206/DENTEX)
+- [Childrens Dental Panoramic Radiographs Dataset (Kaggle) - Deciduous Binary Classification](https://www.kaggle.com/datasets/truthisneverlinear/childrens-dental-panoramic-radiographs-dataset)
