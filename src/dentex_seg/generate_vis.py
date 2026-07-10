@@ -9,9 +9,9 @@ dataset = DENTEXDataset(split='train')
 
 num_classes = 53
 model = get_instance_segmentation_model(num_classes)
-weight_path = "E:/Github/Dental_008/weights/mask_rcnn_dentex_epoch_30.pth"
+weight_path = "C:/Users/chema/Github/Dental_008/weights/pretrained/weights/mask_rcnn_dentex_epoch_30.pth"
 if not os.path.exists(weight_path):
-    weight_path = "E:/Github/Dental_008/weights/pretrained/mask_rcnn_dentex_epoch_30.pth"
+    weight_path = "C:/Users/chema/Github/Dental_008/weights/pretrained/weights/mask_rcnn_dentex_epoch_5.pth"
 model.load_state_dict(torch.load(weight_path, map_location=device))
 model.to(device)
 model.eval()
@@ -38,7 +38,7 @@ with torch.no_grad():
             pred_scores = output['scores']
             
             keep = pred_scores > 0.5
-            visualize_and_save(img, pred_boxes[keep], pred_masks[keep], pred_labels[keep], dataset.id_to_fdi, "E:/Github/Dental_008/reports_archive/images/eval_mixed.jpg")
+            visualize_and_save(img, pred_boxes[keep], pred_masks[keep], pred_labels[keep], dataset.id_to_fdi, "C:/Users/chema/Github/Dental_Panoramic_Reader/reports_archive/images/eval_mixed.jpg")
             found_mixed = True
             print("Found and saved mixed dentition case.")
             
@@ -52,7 +52,7 @@ with torch.no_grad():
             pred_scores = output['scores']
             
             keep = pred_scores > 0.5
-            visualize_and_save(img, pred_boxes[keep], pred_masks[keep], pred_labels[keep], dataset.id_to_fdi, "E:/Github/Dental_008/reports_archive/images/eval_deciduous.jpg")
+            visualize_and_save(img, pred_boxes[keep], pred_masks[keep], pred_labels[keep], dataset.id_to_fdi, "C:/Users/chema/Github/Dental_Panoramic_Reader/reports_archive/images/eval_deciduous.jpg")
             found_deciduous = True
             print("Found and saved deciduous dentition case.")
 
