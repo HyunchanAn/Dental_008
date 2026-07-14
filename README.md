@@ -1,3 +1,4 @@
+![Hugging Face](https://img.shields.io/badge/Models-HuggingFace-yellow?logo=huggingface)
 # Dental\_008: DENTEX 혼합치열기 인스턴스 세그멘테이션
 
 ![Status](https://img.shields.io/badge/Status-v1.0%20Release-brightgreen) ![Python](https://img.shields.io/badge/Python-3.12%2B-blue) ![Backend](https://img.shields.io/badge/Backend-YOLOv8-red) ![UI](https://img.shields.io/badge/UI-Streamlit-orange) ![CI/CD Pipeline](https://img.shields.io/badge/CI%2FCD%20Pipeline-passing-brightgreen?logo=github)
@@ -18,6 +19,14 @@
    * 최신 1-Stage 모델(YOLOv8m-seg)을 사용하여 빠르고 정확하게 치아의 위치(Bounding Box)와 픽셀 윤곽(Mask)을 추출해 냅니다. 특히 75장의 무치악(Edentulous) Hard Negative 데이터를 학습하여 턱뼈나 임플란트 픽스처를 치아로 착각하는 오탐지(FP)를 100% 억제하도록 튜닝되었습니다.
 3. **치식 번호 매칭 알고리즘 (Heuristic Sequence Matcher)**
    * 딥러닝이 치아를 찾아내면, 이 알고리즘(Rule-based)이 구강 내 해부학적 기하 구조(Geometry)를 분석하여 각 치아에 올바른 **FDI 치식 번호(예: 11, 48 등)**를 2-Stage로 매핑합니다.
+
+
+## 📦 Model Weights (Hugging Face)
+이 모듈의 학습된 가중치 모델은 Hugging Face 저장소에 연동되어 있습니다. 
+아래 링크에서 다운로드할 수 있습니다:
+- [Hugging Face Repository (chemahc94/Dental-AI-Models)](https://huggingface.co/chemahc94/Dental-AI-Models/tree/main/Dental_008)
+
+다운로드한 가중치 파일은 이 레포지토리의 해당 모델 폴더에 배치하여 사용하세요.
 
 ## 설치 및 실행 방법
 
