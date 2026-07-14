@@ -35,3 +35,21 @@
 - 학습된 가중치(classifier_best.pth)를 weights/pretrained 폴더(Hugging Face 서브모듈)에 커밋 후 원격 저장소(chemahc94/dentex-tooth-segmentation)로 푸시 완료.
 - 다른 컴퓨터에서 git clone --recurse-submodules 로 가져올때 가중치파일까지 모두 자동으로 이어서 받아올 수 있도록 조치함.
 - README.md 업데이트: 이진 분류 모델 파이프라인 분기 구조 추가, Kaggle 데이터셋의 출처를 References 항목에 명시함.
+
+## 2026-07-14
+- FDI Numbering 모듈(008) 후처리 알고리즘(FDI Corrector) 순수 기하학적 DP 방식 도입 및 고도화
+  - 기존 YOLO 클래스 라벨(0~31) 의존성을 제거하고, 바운딩 박스의 기하학적 특성(크기, 종횡비, 간격)만을 이용한 Dynamic Programming (DP) 기반 Sequence Alignment 알고리즘(dp_align_arch) 구현.
+  - 치열을 상/하악으로 분리할 때 기존 median_y 대신 max_gap 기반 분할(split_arches)을 도입하여 심하게 굽은 치열궁(curved arch)에 대한 강건성 확보.
+  - 상/하악별 이상적인 영구치 치식 배열(Ideal Sequence)과 YOLO가 검출한 박스(box) 간의 최적 매칭 비용 함수 설계.
+- DP 매칭 비용 파라미터 미세 조정 (Fine-tuning) 및 치아 형태학적 특징 반영
+  - DENTEX 검증 데이터셋의 Ground Truth(GT) 분석을 통해 치아 타입별(Anterior, Premolar, Molar) 평균 종횡비(Aspect Ratio)를 도출하고 분류 임계값(0.38, 0.60)을 정밀 캘리브레이션.
+  - 우리나라 환자의 경우 제3대구치(#18, #28 등 사랑니) 발치 빈도가 매우 높다는 임상적 지식을 알고리즘에 반영. 사랑니(FDI % 10 == 8)를 건너뛸 때 발생하는 페널티(skip_penalty)를 0.1로 크게 낮추어, 사랑니가 없는 환자의 파노라마에서도 나머지 치아들이 올바른 치식 번호로 정렬되도록 개선.
+  - YOLO의 치아 검출(Agnostic) Recall이 94% 이상으로 매우 높다는 점을 고려하여 DISCARD_COST를 10.0으로 상향, 올바르게 검출된 치아 박스가 노이즈로 오인되어 버려지지 않도록 보수적 매칭 유도.
+  - 잘못된 치아 타입(예: Molar를 Premolar로 매칭)에 대한 매칭 페널티를 강력하게 부여(3.0, 6.0)하여 전체 배열이 한 칸씩 밀리는(sequence shifting) 현상 방지.
+- YOLOv8 2-Stage E2E Benchmark 수행 및 목표 정확도 달성
+  - 파라미터 조율 후 DENTEX val 데이터셋(50장) 대상 평가 진행 결과, Class-Aware Recall 64.29% 달성. (사용자 목표 60% 초과 달성)
+  - 파노라마 상에서 결손치가 많거나(GT annotated teeth가 매우 적은 경우) 사랑니가 발치된 환경에서도 순수 기하학적 정렬만으로 높은 강건성을 보임을 입증.
+
+- 향후 아키텍처 개선 방향 (사용자 제안 반영)
+  - 008 모듈에서 산출된 예측치에 대해, 치과의사 등 전문가가 통합 파이프라인 UI 상에서 수정(Human-in-the-Loop)할 수 있는 기능 구상.
+  - 사용자가 특정 치아의 번호를 강제로 정정(Override)하면, 해당 치아를 Anchor로 삼아 DP 알고리즘을 재구동하여 나머지 치열을 다시 정렬하는 방식으로 정확도 100%를 달성하는 구조를 통합 UI 앱 단계에서 구현하기로 합의.

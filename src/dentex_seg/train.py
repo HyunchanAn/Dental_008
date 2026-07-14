@@ -18,17 +18,20 @@ def train_model():
 
     # 데이터셋 불러오기 (Hugging Face 직접 다운로드 처리됨)
     dataset_train = DENTEXDataset(split='train')
-    data_loader = DataLoader(dataset_train, batch_size=2, shuffle=True, collate_fn=collate_fn, num_workers=0)
+    data_loader = DataLoader(dataset_train, batch_size=8, shuffle=True, collate_fn=collate_fn, num_workers=8, pin_memory=True)
 
-    # 모델 준비 (배경 1개 + 영구치 32개 + 유치 20개 = 총 53개 클래스)
-    num_classes = 53
+    # 모델 준비 (배경 1개 + 치아 1개 = 총 2개 클래스)
+    num_classes = 2
     model = get_instance_segmentation_model(num_classes)
     model.to(device)
 
     # 파라미터 및 옵티마이저 설정
     params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = torch.optim.SGD(params, lr=0.005, momentum=0.9, weight_decay=0.0005)
+    optimizer = torch.optim.SGD(params, lr=0.02, momentum=0.9, weight_decay=0.0005)
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.2)
+    
+    # AMP 활성화 (RTX 5080 텐서 코어 활용)
+    scaler = torch.cuda.amp.GradScaler()
 
     num_epochs = 30
     os.makedirs('weights', exist_ok=True)
@@ -45,14 +48,15 @@ def train_model():
             images = list(image.to(device) for image in images)
             targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
-            # 손실 계산
-            loss_dict = model(images, targets)
-            losses = sum(loss for loss in loss_dict.values())
-
-            # 역전파 및 가중치 갱신
+            # 손실 계산 및 역전파 (AMP 적용)
             optimizer.zero_grad()
-            losses.backward()
-            optimizer.step()
+            with torch.cuda.amp.autocast():
+                loss_dict = model(images, targets)
+                losses = sum(loss for loss in loss_dict.values())
+
+            scaler.scale(losses).backward()
+            scaler.step(optimizer)
+            scaler.update()
             
             epoch_loss += losses.item()
             

@@ -26,6 +26,7 @@ def get_fdi_to_class_id():
 class DENTEXDataset(Dataset):
     def __init__(self, split='train', transforms=None):
         self.transforms = transforms
+        self.split = split
         self.fdi_to_id, self.id_to_fdi = get_fdi_to_class_id()
         
         # 캐시 디렉토리 설정
@@ -129,7 +130,7 @@ class DENTEXDataset(Dataset):
             if fdi not in self.fdi_to_id:
                 continue
                 
-            class_id = self.fdi_to_id[fdi]
+            class_id = 1 if self.split == 'train' else self.fdi_to_id[fdi]
             
             # 폴리곤 좌표에서 마스크 생성
             polygon = ann.get('segmentation', [])
