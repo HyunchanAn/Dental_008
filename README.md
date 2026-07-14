@@ -1,4 +1,4 @@
-![Hugging Face](https://img.shields.io/badge/Models-HuggingFace-yellow?logo=huggingface)
+![Status](https://img.shields.io/badge/Status-v1.0%20Release-brightgreen) ![Python](https://img.shields.io/badge/Python-3.12%2B-blue) ![Backend](https://img.shields.io/badge/Backend-YOLOv8-red) ![UI](https://img.shields.io/badge/UI-Streamlit-orange) ![CI/CD Pipeline](https://img.shields.io/badge/CI%2FCD%20Pipeline-passing-brightgreen?logo=github)
 # Dental\_008: DENTEX 혼합치열기 인스턴스 세그멘테이션
 
 ![Status](https://img.shields.io/badge/Status-v1.0%20Release-brightgreen) ![Python](https://img.shields.io/badge/Python-3.12%2B-blue) ![Backend](https://img.shields.io/badge/Backend-YOLOv8-red) ![UI](https://img.shields.io/badge/UI-Streamlit-orange) ![CI/CD Pipeline](https://img.shields.io/badge/CI%2FCD%20Pipeline-passing-brightgreen?logo=github)
@@ -145,3 +145,6 @@ git clone --recurse-submodules https://github.com/HyunchanAn/Dental_008.git
 
 * [DENTEX Dataset (Hugging Face Open Dataset) - Permanent Teeth Segmentation](https://huggingface.co/datasets/LUNA0206/DENTEX)
 * [Childrens Dental Panoramic Radiographs Dataset (Kaggle) - Deciduous Binary Classification](https://www.kaggle.com/datasets/truthisneverlinear/childrens-dental-panoramic-radiographs-dataset)
+
+## 학습 환경 (Training Environment)
+> **[학습 환경 사양]** 실질적 모델 학습은 **RTX 5080 + 라이젠9-6 9900x** 환경에서 진행되었습니다.
