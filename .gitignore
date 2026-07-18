@@ -12,3 +12,5 @@ venv/
 env/
 data/  
  
+*.onnx
+__pycache__/
