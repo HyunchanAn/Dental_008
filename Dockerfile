@@ -6,6 +6,7 @@ WORKDIR /app
 
 # 시스템 패키지 업데이트, Python 3.10 및 OpenCV 의존성 설치
 RUN apt-get update && apt-get install -y \
+    git \
     python3.10 \
     python3-pip \
     python3.10-dev \
