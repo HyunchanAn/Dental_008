@@ -148,6 +148,10 @@ git clone --recurse-submodules https://github.com/HyunchanAn/Dental_008.git
 
 ***
 
+## 🚀 향후 과제 (TODO)
+
+- **ONNX 포팅 (ONNX Conversion)**: 현재 `.pth` 형태의 모델(객체 분할)은 파이토치 의존성으로 인해 추론 시 오버헤드가 발생할 수 있습니다. 향후 전체 서빙 파이프라인의 추론 속도를 극대화하고 타 모듈들과 추론 엔진(ONNX Runtime 등)을 표준화하기 위해, 복잡한 후처리 로직을 최적화하여 ONNX 포맷으로 변환하는 작업을 진행해야 합니다.
+
 ## 📚 References
 
 * [DENTEX Dataset (Hugging Face Open Dataset) - Permanent Teeth Segmentation](https://huggingface.co/datasets/LUNA0206/DENTEX)
