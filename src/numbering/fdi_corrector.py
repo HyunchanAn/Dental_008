@@ -32,15 +32,26 @@ def get_box_type(w, h):
     else:
         return 1 # Premolar
 
-def match_cost(box_type, fdi):
+def match_cost(box_type, fdi, yolo_fdi=None):
     ideal_type = get_ideal_type(fdi)
-    if box_type == ideal_type:
-        return 0.0
-    if abs(box_type - ideal_type) == 1:
-        return 3.0
-    return 6.0
+    cost = 0.0
+    if box_type != ideal_type:
+        cost += 3.0 if abs(box_type - ideal_type) == 1 else 6.0
 
-def dp_align_arch(boxes_np, ideal_sequence):
+    # Model prediction agreement prior (prevents domino effect on missing teeth)
+    if yolo_fdi is not None and yolo_fdi > 0:
+        if yolo_fdi == fdi:
+            cost -= 4.0 # Strong reward for agreeing with model prediction
+        elif (yolo_fdi // 10) == (fdi // 10):
+            diff = abs((yolo_fdi % 10) - (fdi % 10))
+            if diff > 1:
+                cost += 2.5 # Mild penalty for diverging more than 1 tooth in same quadrant
+        else:
+            cost += 8.0 # Strong penalty for crossing quadrants
+
+    return cost
+
+def dp_align_arch(boxes_np, ideal_sequence, yolo_labels_arch=None):
     n = len(boxes_np)
     m = len(ideal_sequence)
     if n == 0: return []
@@ -57,12 +68,13 @@ def dp_align_arch(boxes_np, ideal_sequence):
         w = box[2] - box[0]
         h = box[3] - box[1]
         b_type = get_box_type(w, h)
+        yolo_fdi = yolo_labels_arch[i - 1] if yolo_labels_arch is not None and len(yolo_labels_arch) >= i else None
         
         for j in range(1, m + 1):
             fdi = ideal_sequence[j - 1]
             
-            # Option 1: Match box i to ideal j
-            cost_match = dp[i - 1, j - 1] + match_cost(b_type, fdi)
+            # Option 1: Match box i to ideal j with YOLO agreement prior
+            cost_match = dp[i - 1, j - 1] + match_cost(b_type, fdi, yolo_fdi)
             
             # Option 2: Box i is a false positive (discard box)
             cost_discard_box = dp[i - 1, j] + DISCARD_COST
@@ -125,7 +137,7 @@ def dp_align_arch(boxes_np, ideal_sequence):
     return assignments
 
 def correct_fdi_numbers(boxes, yolo_labels):
-    # This function now ignores yolo_labels entirely and does pure geometric DP
+    # Hybrid sequence corrector: Uses geometric DP aligned with YOLO prediction priors
     is_tensor = False
     if hasattr(boxes, 'cpu'):
         is_tensor = True
@@ -146,9 +158,10 @@ def correct_fdi_numbers(boxes, yolo_labels):
         upper_boxes = boxes_np[upper_idx]
         sort_order = np.argsort(upper_boxes[:, 0])
         sorted_boxes = upper_boxes[sort_order]
+        sorted_yolo = yolo_labels_np[upper_idx][sort_order]
         
         ideal_upper = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28]
-        assign_upper = dp_align_arch(sorted_boxes, ideal_upper)
+        assign_upper = dp_align_arch(sorted_boxes, ideal_upper, sorted_yolo)
         
         for local_i, fdi in assign_upper:
             global_i = upper_idx[sort_order[local_i]]
@@ -159,10 +172,11 @@ def correct_fdi_numbers(boxes, yolo_labels):
         lower_boxes = boxes_np[lower_idx]
         sort_order = np.argsort(lower_boxes[:, 0])
         sorted_boxes = lower_boxes[sort_order]
+        sorted_yolo = yolo_labels_np[lower_idx][sort_order]
         
         # Lower sequence sorted by X (left to right)
         ideal_lower = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38]
-        assign_lower = dp_align_arch(sorted_boxes, ideal_lower)
+        assign_lower = dp_align_arch(sorted_boxes, ideal_lower, sorted_yolo)
         
         for local_i, fdi in assign_lower:
             global_i = lower_idx[sort_order[local_i]]
