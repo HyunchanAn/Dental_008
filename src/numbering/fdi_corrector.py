@@ -136,8 +136,9 @@ def dp_align_arch(boxes_np, ideal_sequence, yolo_labels_arch=None):
     assignments.reverse()
     return assignments
 
-def correct_fdi_numbers(boxes, yolo_labels):
+def correct_fdi_numbers(boxes, yolo_labels, return_uncertainty=False):
     # Hybrid sequence corrector: Uses geometric DP aligned with YOLO prediction priors
+    # Detects conflicts and uncertain tooth assignments when DP alignment clashes with model predictions
     is_tensor = False
     if hasattr(boxes, 'cpu'):
         is_tensor = True
@@ -148,8 +149,13 @@ def correct_fdi_numbers(boxes, yolo_labels):
         yolo_labels_np = np.array(yolo_labels)
         
     n = len(boxes_np)
-    if n == 0: return yolo_labels
+    if n == 0:
+        if return_uncertainty:
+            return yolo_labels, np.zeros(0, dtype=bool)
+        return yolo_labels
+        
     corrected_labels = np.copy(yolo_labels_np)
+    uncertain_mask = np.zeros(n, dtype=bool)
     
     upper_idx, lower_idx = split_arches(boxes_np)
     
@@ -165,7 +171,17 @@ def correct_fdi_numbers(boxes, yolo_labels):
         
         for local_i, fdi in assign_upper:
             global_i = upper_idx[sort_order[local_i]]
+            orig_yolo = sorted_yolo[local_i]
             corrected_labels[global_i] = fdi
+            
+            # Clinical Uncertainty Gate: Flag tooth when DP alignment conflicts with YOLO prediction
+            if orig_yolo > 0 and fdi > 0:
+                yolo_quad = orig_yolo // 10
+                fdi_quad = fdi // 10
+                yolo_num = orig_yolo % 10
+                fdi_num = fdi % 10
+                if yolo_quad != fdi_quad or abs(yolo_num - fdi_num) >= 2:
+                    uncertain_mask[global_i] = True
             
     # Process Lower Arch
     if len(lower_idx) > 0:
@@ -180,9 +196,26 @@ def correct_fdi_numbers(boxes, yolo_labels):
         
         for local_i, fdi in assign_lower:
             global_i = lower_idx[sort_order[local_i]]
+            orig_yolo = sorted_yolo[local_i]
             corrected_labels[global_i] = fdi
+            
+            # Clinical Uncertainty Gate: Flag tooth when DP alignment conflicts with YOLO prediction
+            if orig_yolo > 0 and fdi > 0:
+                yolo_quad = orig_yolo // 10
+                fdi_quad = fdi // 10
+                yolo_num = orig_yolo % 10
+                fdi_num = fdi % 10
+                if yolo_quad != fdi_quad or abs(yolo_num - fdi_num) >= 2:
+                    uncertain_mask[global_i] = True
             
     if is_tensor:
         import torch
-        return torch.tensor(corrected_labels, device=boxes.device, dtype=yolo_labels.dtype)
+        out_tensor = torch.tensor(corrected_labels, device=boxes.device, dtype=yolo_labels.dtype)
+        if return_uncertainty:
+            return out_tensor, torch.tensor(uncertain_mask, device=boxes.device, dtype=torch.bool)
+        return out_tensor
+
+    if return_uncertainty:
+        return corrected_labels, uncertain_mask
     return corrected_labels
+
