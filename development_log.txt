@@ -53,3 +53,15 @@
 - 향후 아키텍처 개선 방향 (사용자 제안 반영)
   - 008 모듈에서 산출된 예측치에 대해, 치과의사 등 전문가가 통합 파이프라인 UI 상에서 수정(Human-in-the-Loop)할 수 있는 기능 구상.
   - 사용자가 특정 치아의 번호를 강제로 정정(Override)하면, 해당 치아를 Anchor로 삼아 DP 알고리즘을 재구동하여 나머지 치열을 다시 정렬하는 방식으로 정확도 100%를 달성하는 구조를 통합 UI 앱 단계에서 구현하기로 합의.
+
+## 2026-10-20
+- 무누수 분할 매니페스트(Train 507장 / Val 127장, 파일명 및 SHA-256 바이트 해시 중복 0건) 기반 YOLO 세그멘테이션 데이터셋 재생성 스크립트(prepare_yolo_data.py, src/dentex_seg/prepare_yolo_data.py) 구현 및 검증 완료
+- 무치악 Hard Negative 75장(edentulous_images/)을 학습셋에 전량 투입하던 기존 방식을 폐기하고, scripts/prepare_v3_dataset.py에서 seed=42 기준 Train 60장(Hard Negative 배경) / 독립 검증용 Holdout Val 15장(images/edentulous_val, 교집합 0건)으로 엄격 분리 완료 (Dental_008#1 해결)
+- 메인 워크스테이션(RTX 5080 16GB, device=0)에서 무누수 통합 데이터셋(Train 567장: DENTEX 507 + 무치악 60 / Val 127장) 대상 YOLOv8m-seg 100 에포크 재학습(train.py) 완주 및 신규 가중치(weights/best.pt, weights/yolov8m_best.pt, models/yolov8m_best.pt, SHA-256: 88db875aa9ec209731dfce6fa630b4ee4169e3a57b084d585d5aa150263fe9b7) 반영 및 Hugging Face Hub(chemahc94/Dental-AI-Models) 업로드 완료
+- 무누수 검증셋(Val 127장, 치아 인스턴스 3,598개) 정량 평가 실측 완료 (Dental_000#1 해결):
+  - Box: Precision 99.06% (0.9906), Recall 99.06% (0.9906), mAP@0.5 99.15% (0.9915), mAP@0.5:0.95 60.37% (0.6037)
+  - Mask: Precision 97.75% (0.9775), Recall 97.75% (0.9775), mAP@0.5 98.55% (0.9855), mAP@0.5:0.95 55.64% (0.5564)
+  - 추론 속도: 7.1 ms/image (140.8 FPS, RTX 5080 기준)
+- 독립 무치악 홀드아웃(15장, 미학습 이미지) 대상 scripts/test_on_edentulous.py 평가 완료:
+  - conf=0.25 및 프로덕션 conf=0.20 모두에서 총 오탐(False Positive) 3건, 이미지당 평균 0.20 FP/img, 무오탐 이미지 비율 86.67% (13/15장 완전 억제) 달성
+- README.md 내 재학습 대기 문구를 실측 무누수 검증 지표 및 독립 무치악 홀드아웃 평가 결과로 전면 갱신 완료

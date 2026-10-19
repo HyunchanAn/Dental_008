@@ -24,61 +24,72 @@ def get_fdi_to_class_id():
     return fdi_to_id, id_to_fdi
 
 class DENTEXDataset(Dataset):
-    def __init__(self, split='train', transforms=None):
+    def __init__(self, split='train', transforms=None, seed=42, use_leak_free_split=True):
         self.transforms = transforms
         self.split = split
         self.fdi_to_id, self.id_to_fdi = get_fdi_to_class_id()
-        
+
         # 캐시 디렉토리 설정
         cache_dir = os.path.expanduser("~/.cache/dentex_dataset")
         os.makedirs(cache_dir, exist_ok=True)
-        
-        if split == 'train':
+
+        self.img_dir = os.path.join(cache_dir, "training_data/quadrant_enumeration/xrays")
+        self.json_path = os.path.join(cache_dir, "training_data/quadrant_enumeration/train_quadrant_enumeration.json")
+
+        if not os.path.exists(self.json_path):
             print("Hugging Face에서 DENTEX training_data.zip 다운로드 중 (10.9 GB)...")
             zip_path = hf_hub_download(repo_id="LUNA0206/DENTEX", repo_type="dataset", filename="DENTEX/training_data.zip")
-            
-            self.img_dir = os.path.join(cache_dir, "training_data/quadrant_enumeration/xrays")
-            self.json_path = os.path.join(cache_dir, "training_data/quadrant_enumeration/train_quadrant_enumeration.json")
-            
-            # 필요한 경우 압축 해제
-            if not os.path.exists(self.json_path):
-                print("필요한 학습 데이터셋 압축 해제 중...")
-                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                    # quadrant_enumeration 폴더 내의 파일만 선택적 해제
-                    members = [m for m in zip_ref.namelist() if m.startswith("training_data/quadrant_enumeration/")]
-                    zip_ref.extractall(path=cache_dir, members=members)
-                print("압축 해제 완료.")
-                
-        else: # validation
-            print("Hugging Face에서 DENTEX validation_data.zip 및 JSON 다운로드 중...")
-            zip_path = hf_hub_download(repo_id="LUNA0206/DENTEX", repo_type="dataset", filename="DENTEX/validation_data.zip")
-            self.json_path = hf_hub_download(repo_id="LUNA0206/DENTEX", repo_type="dataset", filename="DENTEX/validation_triple.json")
-            
-            self.img_dir = os.path.join(cache_dir, "validation_data/quadrant_enumeration_disease/xrays")
-            
-            # 필요한 경우 압축 해제
-            test_img = os.path.join(self.img_dir, "val_44.png")
-            if not os.path.exists(test_img):
-                print("필요한 검증 데이터셋 압축 해제 중...")
-                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                    members = [m for m in zip_ref.namelist() if m.startswith("validation_data/quadrant_enumeration_disease/")]
-                    zip_ref.extractall(path=cache_dir, members=members)
-                print("압축 해제 완료.")
-                
+            print("필요한 학습 데이터셋 압축 해제 중...")
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                members = [m for m in zip_ref.namelist() if m.startswith("training_data/quadrant_enumeration/")]
+                zip_ref.extractall(path=cache_dir, members=members)
+            print("압축 해제 완료.")
+
         # COCO 포맷 JSON 로드
-        with open(self.json_path, 'r') as f:
+        with open(self.json_path, 'r', encoding='utf-8') as f:
             self.coco_data = json.load(f)
-            
-        self.images = {img['id']: img for img in self.coco_data['images']}
-        
+
+        all_images = {img['id']: img for img in self.coco_data['images']}
+
+        if use_leak_free_split and split in ('train', 'val'):
+            import csv
+            import random
+            repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+            dental_000_root = os.path.abspath(os.path.join(repo_root, "..", "Dental_000"))
+            manifest_candidates = [
+                os.path.join(dental_000_root, "reports_archive", "dental_008_dentex_manifest.csv"),
+                os.path.join(dental_000_root, "reports", "dental_008_dentex_manifest.csv"),
+            ]
+            manifest_path = next((p for p in manifest_candidates if os.path.exists(p)), None)
+            if manifest_path is not None:
+                train_files, val_files = set(), set()
+                with open(manifest_path, "r", encoding="utf-8") as mf:
+                    for row in csv.DictReader(mf):
+                        if row["split"].strip() == "train":
+                            train_files.add(row["filename"].strip())
+                        elif row["split"].strip() == "val":
+                            val_files.add(row["filename"].strip())
+            else:
+                all_fnames = sorted(img["file_name"] for img in all_images.values())
+                rng = random.Random(seed)
+                rng.shuffle(all_fnames)
+                n_train = int(round(len(all_fnames) * 0.8))
+                train_files = set(all_fnames[:n_train])
+                val_files = set(all_fnames[n_train:])
+
+            assert len(train_files & val_files) == 0, "Data leakage detected: Train and Val sets overlap!"
+            target_files = train_files if split == "train" else val_files
+            self.images = {img_id: img for img_id, img in all_images.items() if img["file_name"] in target_files}
+        else:
+            self.images = all_images
+
         # 이미지 ID별 주석 그룹화
         self.img_to_anns = {}
         for ann in self.coco_data['annotations']:
             img_id = ann['image_id']
-            if img_id not in self.img_to_anns:
-                self.img_to_anns[img_id] = []
-            self.img_to_anns[img_id].append(ann)
-            
+            if img_id in self.images:
+                self.img_to_anns.setdefault(img_id, []).append(ann)
+
         self.img_ids = list(self.images.keys())
         print(f"[{split}] 로드 완료. 총 이미지 수: {len(self.img_ids)}")
 

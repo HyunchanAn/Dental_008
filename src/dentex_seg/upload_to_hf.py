@@ -1,48 +1,58 @@
 import os
+from pathlib import Path
 from huggingface_hub import HfApi
 
-def upload_weights_to_hf():
-    print("허깅페이스 리포지토리에 가중치 업로드를 준비합니다...")
-    repo_id = "chemahc94/dentex-tooth-segmentation"
+
+def resolve_hf_token() -> str | None:
     token = os.environ.get("HF_TOKEN")
-    
-    if not token:
-        # .env 파일에서 토큰 읽기 시도 (로컬 호스트 실행 지원)
-        env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env")
-        if os.path.exists(env_path):
-            with open(env_path, "r") as f:
+    if token:
+        return token.strip()
+
+    repo_root = Path(__file__).resolve().parents[2]
+    env_candidates = [
+        repo_root / ".env",
+        repo_root.parent / "Dental_000" / ".env",
+        repo_root.parent / "Dental_Panoramic_Reader" / ".env",
+    ]
+    for env_path in env_candidates:
+        if env_path.exists():
+            with open(env_path, "r", encoding="utf-8", errors="ignore") as f:
                 for line in f:
-                    if line.strip().startswith("HF_TOKEN="):
-                        token = line.strip().split("=", 1)[1].strip()
-                        break
-    
-    if not token:
-        print("경고: HF_TOKEN 환경 변수가 설정되지 않았습니다. 업로드를 건너뜁니다.")
-        return
+                    line_s = line.strip()
+                    if line_s.startswith("HF_TOKEN="):
+                        return line_s.split("=", 1)[1].strip().strip('"').strip("'")
+    return None
 
+
+def upload_weights_to_hf():
+    repo_root = Path(__file__).resolve().parents[2]
+    best_pt = repo_root / "weights" / "best.pt"
+    if not best_pt.exists():
+        best_pt = repo_root / "weights" / "yolov8m_best.pt"
+    if not best_pt.exists():
+        raise FileNotFoundError(f"Weight file not found at {best_pt}")
+
+    token = resolve_hf_token()
     api = HfApi(token=token)
-    
-    # 리포지토리 생성 (이미 존재하면 예외를 무시함)
-    try:
-        api.create_repo(repo_id=repo_id, exist_ok=True)
-        print(f"리포지토리 확인 완료: {repo_id}")
-    except Exception as e:
-        print(f"리포지토리 생성 중 오류(혹은 이미 존재): {e}")
 
-    # weights 폴더 안의 모델들을 업로드
-    weights_dir = "weights"
-    if not os.path.exists(weights_dir):
-        print("업로드할 weights 폴더가 존재하지 않습니다.")
-        return
+    target_repo = "chemahc94/Dental-AI-Models"
+    target_paths_in_repo = [
+        "Dental_008_weights_best.pt",
+        "Dental_008/yolov8m_best.pt",
+        "Dental_008/weights/best.pt",
+    ]
 
-    print("가중치 파일들을 업로드 중입니다. 시간이 다소 소요될 수 있습니다...")
-    api.upload_folder(
-        folder_path=weights_dir,
-        repo_id=repo_id,
-        path_in_repo="weights",
-        commit_message="Update model weights after training"
-    )
-    print(f"모든 가중치가 성공적으로 '{repo_id}'에 업로드되었습니다!")
+    for path_in_repo in target_paths_in_repo:
+        print(f"[upload_to_hf] Uploading {best_pt} -> {target_repo}:{path_in_repo} ...")
+        api.upload_file(
+            path_or_fileobj=str(best_pt),
+            path_in_repo=path_in_repo,
+            repo_id=target_repo,
+            repo_type="model",
+            commit_message=f"Update Dental_008 leak-free YOLOv8m-seg weights ({path_in_repo})",
+        )
+        print(f"[upload_to_hf] Uploaded {path_in_repo} successfully.")
+
 
 if __name__ == "__main__":
     upload_weights_to_hf()
