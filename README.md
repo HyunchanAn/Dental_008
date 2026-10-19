@@ -134,21 +134,27 @@ git clone --recurse-submodules https://github.com/HyunchanAn/Dental_008.git
 
 ***
 
-## 📊 E2E 벤치마크 및 성능 검증
+## 📊 E2E 벤치마크 및 데이터 분할 무결성 공시
 
-본 모델은 영구치열기, 유치열기, 혼합치열기 전반에 걸쳐 강력한 인스턴스 세그멘테이션 성능을 입증했습니다.
+본 모델은 영구치열기, 유치열기, 혼합치열기 전반에 걸쳐 인스턴스 세그멘테이션 및 2-Stage FDI 치식 매칭을 수행합니다.
 
-* **Average Inference Time**: 0.0596 s/image (16.77 FPS)
-* **Average Bounding Box IoU**: 0.8245
-* **Average Mask IoU**: 0.7965
-
-상세한 시각화 자료와 성능 평가 지표는 루트 경로에 생성된 **[최종 E2E 검증 리포트](reports_archive/260710_1300_Dentex_E2E_Validation_Report.md)**에서 확인하실 수 있습니다.
+- [Mask R-CNN + 2-Stage Sequence Matcher 검증 지표 (`reports_archive/260710_1300_Dentex_E2E_Validation_Report.md`)]:
+  - Average Inference Time: 0.0596 s/image (16.77 FPS)
+  - Average Bounding Box IoU: 0.8245
+  - Average Mask IoU: 0.7965
+- [10례 임상 정량 벤치마크 (`Dental_000/reports_archive/10_cases_quantitative_benchmark.json`)]:
+  - 검출률(Detection Rate): 100.0% (10/10 증례, 증례당 평균 28.9개 치아 식별)
+- [데이터 누수(Data Leakage) 감사 및 무누수 매니페스트 교체 공시]:
+  - 과거 `data/yolo_fdi/images/val` (38장)에서 산출된 `mAP50 0.995` (Recall 99.2%, Precision 98.4%) 지표는 검증셋 38장 전부가 `images/train` (595장)에 중복 포함된 데이터 누수 결과로 확인되어 공식 성능 지표에서 폐기되었습니다.
+  - 현재 `src/dentex_seg/prepare_yolo_data.py` 및 `src/dentex_seg/dataset.py`는 고정 시드(`seed=42`) 기반 80/20 무누수 분할 및 `Train ∩ Val == ∅` 런타임 검증(`AssertionError`)이 적용되었으며, 결정론적 분할 매니페스트(`Dental_000/reports_archive/dental_008_dentex_manifest.csv`, Train 507장 / Val 127장, 교집합 0)를 기준으로 메인 워크스테이션(RTX 5080) 재학습이 예정되어 있습니다.
 
 ***
 
-## 🚀 향후 과제 (TODO)
+## 🚀 완료 및 향후 과제 (Status & TODO)
 
-- **ONNX 포팅 (ONNX Conversion)**: 현재 `.pth` 형태의 모델(객체 분할)은 파이토치 의존성으로 인해 추론 시 오버헤드가 발생할 수 있습니다. 향후 전체 서빙 파이프라인의 추론 속도를 극대화하고 타 모듈들과 추론 엔진(ONNX Runtime 등)을 표준화하기 위해, 복잡한 후처리 로직을 최적화하여 ONNX 포맷으로 변환하는 작업을 진행해야 합니다.
+- [완료] ONNX 포팅 (`yolov8m_best.onnx`) 및 Hugging Face (`chemahc94/Dental-AI-Models`) 배포 완료
+- [완료] Train/Val 중복 누수 차단 가드 및 무누수 분할 매니페스트(`dental_008_dentex_manifest.csv`) 구축 완료
+- [진행 대기] 메인 워크스테이션(RTX 5080)에서 무누수 분할(507/127) 기반 `YOLOv8m-seg` 재학습 및 `mAP50` / `mAP50-95` 재측정
 
 ## 📚 References
 
@@ -156,7 +162,7 @@ git clone --recurse-submodules https://github.com/HyunchanAn/Dental_008.git
 * [Childrens Dental Panoramic Radiographs Dataset (Kaggle) - Deciduous Binary Classification](https://www.kaggle.com/datasets/truthisneverlinear/childrens-dental-panoramic-radiographs-dataset)
 
 ## 학습 환경 (Training Environment)
-> **[학습 환경 사양]** 실질적 모델 학습은 **RTX 5080 + 라이젠9-6 9900x** 환경에서 진행되었습니다.
+> [학습 환경 사양] 실질적 모델 학습은 RTX 5080 + 라이젠9-6 9900X 환경에서 진행되었습니다.
 
 ## 연구용 실행 주의사항
 - 기본 실행 주소: 127.0.0.1 (로컬 전용)
