@@ -16,10 +16,16 @@ def assign_fdi_labels(boxes, scores, image_width, image_height):
     centers_y = (boxes_np[:, 1] + boxes_np[:, 3]) / 2.0
     widths = boxes_np[:, 2] - boxes_np[:, 0]
     
-    # 1. 상악(Upper) / 하악(Lower) 분리 (Median Y 사용)
-    median_y = np.median(centers_y)
-    upper_mask = centers_y < median_y
-    lower_mask = centers_y >= median_y
+    # 1. 상악(Upper) / 하악(Lower) 분리 (Max Gap 기반 경계 추정)
+    sorted_y = np.sort(centers_y)
+    if len(sorted_y) > 1:
+        gaps = np.diff(sorted_y)
+        max_gap_idx = np.argmax(gaps)
+        split_y = (sorted_y[max_gap_idx] + sorted_y[max_gap_idx + 1]) / 2.0
+    else:
+        split_y = np.median(centers_y)
+    upper_mask = centers_y < split_y
+    lower_mask = centers_y >= split_y
     
     labels = np.zeros(len(boxes), dtype=np.int64)
     
