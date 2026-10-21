@@ -61,5 +61,6 @@ def clean_images(target_dir):
     print(f"총 {count-1}개의 이미지가 edentulous_XXXX.jpg 형태로 정규화되었습니다.")
 
 if __name__ == "__main__":
-    target = r"\\rtx4060laptop-hc\Users\chema\Github\Dental_008\edentulous_images"
+    from pathlib import Path
+    target = str(Path(__file__).resolve().parents[1] / "edentulous_images")
     clean_images(target)

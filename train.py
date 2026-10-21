@@ -4,6 +4,7 @@ import json
 import os
 import shutil
 from pathlib import Path
+import torch
 from ultralytics import YOLO
 
 
@@ -27,7 +28,12 @@ def main():
     parser.add_argument("--batch", type=int, default=16, help="Batch size")
     parser.add_argument("--imgsz", type=int, default=640, help="Image size")
     parser.add_argument("--workers", type=int, default=8, help="Dataloader workers")
-    parser.add_argument("--device", type=str, default="0", help="CUDA device")
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="0" if torch.cuda.is_available() else "cpu",
+        help="Device ('0' for CUDA or 'cpu')",
+    )
     args = parser.parse_args()
 
     repo_root = Path(__file__).resolve().parent

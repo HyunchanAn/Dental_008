@@ -101,10 +101,12 @@ python src/dentex_seg/inference.py
 - [완료] 메인 워크스테이션(RTX 5080) 무누수 분할(507/127) 기반 `YOLOv8m-seg` 100 에포크 재학습 및 `Box/Mask mAP` 실측 완료
 - [완료] 재학습 가중치(`best.pt`) Hugging Face (`chemahc94/Dental-AI-Models`) 배포 및 `weights_manifest.yaml` SHA-256 동기화 완료
 
-## 📚 References
+## 📚 References & Dataset Provenance
 
-- [DENTEX Dataset (Hugging Face Open Dataset) - Permanent Teeth Segmentation](https://huggingface.co/datasets/LUNA0206/DENTEX)
-- [Childrens Dental Panoramic Radiographs Dataset (Kaggle) - Deciduous Binary Classification](https://www.kaggle.com/datasets/truthisneverlinear/childrens-dental-panoramic-radiographs-dataset)
+- [DENTEX Dataset (Hugging Face Open Dataset) - Permanent Teeth Segmentation](https://huggingface.co/datasets/LUNA0206/DENTEX) (`CC BY-NC-SA 4.0`, Hamamci et al., 2023)
+- [Childrens Dental Panoramic Radiographs Dataset (Kaggle) - Deciduous Binary Classification](https://www.kaggle.com/datasets/truthisneverlinear/childrens-dental-panoramic-radiographs-dataset) (`CC0 1.0`)
+- `edentulous_images/` (Hard Negative 75장): 웹 공개 학술/임상 교육 증례에서 수집된 무치악 및 임플란트 파노라마 참조 영상으로, 자연치아 오탐(FP) 억제를 위한 비영리 학술 연구 전용 배경 샘플입니다(`edentulous_images/README.md` 참조).
+- 소스 코드 라이선스: `MIT License` ([LICENSE](LICENSE)), 단 `CC BY-NC-SA 4.0` 데이터 기반 학습 가중치는 비영리 연구 조건을 승계합니다.
 
 ## 학습 환경 (Training Environment)
 > [학습 환경 사양] 실질적 모델 학습은 RTX 5080 + 라이젠9-6 9900X 환경에서 진행되었습니다.

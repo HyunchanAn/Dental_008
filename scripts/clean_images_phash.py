@@ -37,5 +37,6 @@ def clean_images_phash(target_dir):
     print(f"\n총 {len(duplicates)}개의 '시각적' 중복 파일 삭제 완료.")
 
 if __name__ == "__main__":
-    target = r"\\rtx4060laptop-hc\Users\chema\Github\Dental_008\edentulous_images"
+    from pathlib import Path
+    target = str(Path(__file__).resolve().parents[1] / "edentulous_images")
     clean_images_phash(target)
