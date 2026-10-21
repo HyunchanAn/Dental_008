@@ -2,7 +2,6 @@
 /*.pt
 weights/*.pth
 weights/*.pt
-!weights/best.pt
 !weights/pretrained/
 models/*.pt
 models/*.onnx
