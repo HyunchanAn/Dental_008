@@ -4,6 +4,7 @@ weights/*.pth
 weights/*.pt
 !weights/pretrained/
 models/*.pt
+models/*.pth
 models/*.onnx
 
 # Datasets & Runs
