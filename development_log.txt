@@ -73,3 +73,4 @@
 
 2026-10-25
 - 전 시리즈 개발일지(`development_log.txt`) 단일 표준 양식 통일 완료.
+- 웹 수집 무치악 Hard Negative 이미지(`edentulous_images/*.jpg`, `*.gif` 총 76개 파일)를 로컬 디스크에 보존하면서 원격 공개 Git 추적에서 전면 제외(`git rm --cached` 및 `.gitignore` 등록) 완료.

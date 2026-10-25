@@ -26,3 +26,9 @@ env/
 
 # ONNX
 *.onnx
+
+# Local web-collected Hard Negative images (excluded from public Git tracking)
+edentulous_images/*.jpg
+edentulous_images/*.jpeg
+edentulous_images/*.png
+edentulous_images/*.gif
